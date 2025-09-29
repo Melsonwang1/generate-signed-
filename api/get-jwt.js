@@ -1,10 +1,10 @@
+import { createPrivateKey } from "crypto";
 import jwt from "jsonwebtoken";
 
 export default function handler(req, res) {
   try {
     // Hardcoded RSA private key
-    const PRIVATE_KEY = `
------BEGIN RSA PRIVATE KEY-----
+    const PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEArvRAuv7bhCvfuPnWm2iZoxU0ih1CcNiMsY7Nfaqa09faBJOn
 mE0zuOYTFYaqVLz0hmu3WzcjH9Anzn83CLJUXrXre509TXs4+BmUfZkdqaehnkS
 iJ62r7cRETTJkwrkvSQbM1QaJnpwERyiHuXtay0JyHp+1PBf6YxN9RjikftngkE+
@@ -33,7 +33,6 @@ JojorW445RdToNhYaIG6h3S9SAwwwVnNnk3HeS9q1NkVJ7MUQ7XLVg==
 -----END RSA PRIVATE KEY-----
 `;
 
-    // Hardcoded integration key and user GUID
     const INTEGRATION_KEY = "YOUR_INTEGRATION_KEY";
     const USER_GUID = "59d376b3-0a6b-4307-a9a7-83eb92e3fa59";
 
@@ -44,11 +43,17 @@ JojorW445RdToNhYaIG6h3S9SAwwwVnNnk3HeS9q1NkVJ7MUQ7XLVg==
       sub: USER_GUID,
       aud: "account-d.docusign.com",
       iat: now,
-      exp: now + 3600, // expires in 1 hour
-      scope: "signature impersonation"
+      exp: now + 3600,
+      scope: "signature impersonation",
     };
 
-    const token = jwt.sign(payload, PRIVATE_KEY, { algorithm: "RS256" });
+    // Use crypto.createPrivateKey to ensure RS256 parsing works
+    const privateKeyObject = createPrivateKey({
+      key: PRIVATE_KEY,
+      format: "pem",
+    });
+
+    const token = jwt.sign(payload, privateKeyObject, { algorithm: "RS256" });
 
     res.status(200).json({ jwt: token });
   } catch (err) {
